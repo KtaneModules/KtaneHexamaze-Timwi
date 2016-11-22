@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Hexamaze
 {
@@ -16,66 +17,6 @@ namespace Hexamaze
                 }
         }
         public static readonly double WidthToHeight = Math.Sqrt(3) / 2;
-
-        public static double LargeWidth(int sideLength) { return (3 * sideLength - 1) * .5; }
-        public static double LargeHeight(int sideLength) { return 2 * sideLength - 1; }
-
-        public static IEnumerable<PointD> LargeHexagonOutline(int sideLength, double hexWidth, double expand = 0)
-        {
-            sideLength--;
-
-            var tan30 = Math.Tan(Math.PI / 6);
-            var sec30 = 1 / Math.Cos(Math.PI / 6);
-
-            // North-east
-            var offset = expand * new PointD(tan30, -1);
-            for (int i = 0; i <= sideLength; i++)
-            {
-                if (i > 0)
-                    yield return new PointD((i * .75 - .25) * hexWidth, (i * .5 - sideLength - .50) * hexWidth * WidthToHeight) + offset;
-                yield return new PointD((i * .75 + .25) * hexWidth, (i * .5 - sideLength - .50) * hexWidth * WidthToHeight) + offset;
-            }
-            // East
-            offset = expand * new PointD(sec30, 0);
-            for (int i = 0; i <= sideLength; i++)
-            {
-                if (i > 0)
-                    yield return new PointD((sideLength * .75 + .25) * hexWidth, (sideLength * .5 - sideLength + i - .50) * hexWidth * WidthToHeight) + offset;
-                yield return new PointD((sideLength * .75 + .50) * hexWidth, (sideLength * .5 - sideLength + i + .00) * hexWidth * WidthToHeight) + offset;
-            }
-            // South-east
-            offset = expand * new PointD(tan30, 1);
-            for (int i = 0; i <= sideLength; i++)
-            {
-                if (i > 0)
-                    yield return new PointD(((sideLength - i) * .75 + .50) * hexWidth, ((sideLength - i) * .5 + i + .00) * hexWidth * WidthToHeight) + offset;
-                yield return new PointD(((sideLength - i) * .75 + .25) * hexWidth, ((sideLength - i) * .5 + i + .50) * hexWidth * WidthToHeight) + offset;
-            }
-            // South-west
-            offset = expand * new PointD(-tan30, 1);
-            for (int i = 0; i <= sideLength; i++)
-            {
-                if (i > 0)
-                    yield return new PointD((-i * .75 + .25) * hexWidth, (-i * .5 + sideLength + .50) * hexWidth * WidthToHeight) + offset;
-                yield return new PointD((-i * .75 - .25) * hexWidth, (-i * .5 + sideLength + .50) * hexWidth * WidthToHeight) + offset;
-            }
-            // West
-            offset = expand * new PointD(-sec30, 0);
-            for (int i = 0; i <= sideLength; i++)
-            {
-                if (i > 0)
-                    yield return new PointD((-sideLength * .75 - .25) * hexWidth, (-sideLength * .5 + sideLength - i + .50) * hexWidth * WidthToHeight) + offset;
-                yield return new PointD((-sideLength * .75 - .50) * hexWidth, (-sideLength * .5 + sideLength - i + .00) * hexWidth * WidthToHeight) + offset;
-            }
-            // North-west
-            offset = expand * new PointD(-tan30, -1);
-            for (int i = 0; i <= sideLength; i++)
-            {
-                if (i > 0)
-                    yield return new PointD(((-sideLength + i) * .75 - .50) * hexWidth, ((-sideLength + i) * .5 - i + .00) * hexWidth * WidthToHeight) + offset;
-                yield return new PointD(((-sideLength + i) * .75 - .25) * hexWidth, ((-sideLength + i) * .5 - i - .50) * hexWidth * WidthToHeight) + offset;
-            }
-        }
 
         public int Q { get; private set; }
         public int R { get; private set; }
@@ -113,19 +54,7 @@ namespace Hexamaze
                 yield return 5;
         }
 
-        public PointD[] GetPolygon(double hexWidth)
-        {
-            return Ut.NewArray(
-                new PointD((Q * .75 - .50) * hexWidth, (Q * .5 + R + .00) * hexWidth * WidthToHeight),
-                new PointD((Q * .75 - .25) * hexWidth, (Q * .5 + R - .50) * hexWidth * WidthToHeight),
-                new PointD((Q * .75 + .25) * hexWidth, (Q * .5 + R - .50) * hexWidth * WidthToHeight),
-                new PointD((Q * .75 + .50) * hexWidth, (Q * .5 + R + .00) * hexWidth * WidthToHeight),
-                new PointD((Q * .75 + .25) * hexWidth, (Q * .5 + R + .50) * hexWidth * WidthToHeight),
-                new PointD((Q * .75 - .25) * hexWidth, (Q * .5 + R + .50) * hexWidth * WidthToHeight)
-            );
-        }
-
-        public PointD GetCenter(double hexWidth) { return new PointD(Q * .75 * hexWidth, (Q * .5 + R) * hexWidth * WidthToHeight); }
+        public Vector3 GetCenter(double hexWidth, float y) { return new Vector3((float) (Q * .75 * hexWidth), y, (float) (-(Q * .5 + R) * hexWidth * WidthToHeight)); }
 
         public override string ToString() { return string.Format("({0}, {1})", Q, R); }
 

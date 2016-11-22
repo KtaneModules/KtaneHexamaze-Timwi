@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Rnd = UnityEngine.Random;
+
 namespace Hexamaze
 {
     static class Ut
@@ -12,7 +14,7 @@ namespace Hexamaze
             return array;
         }
 
-        private static Marking[] _markingsSquare = new[] { Marking.SquareNS, Marking.SquareNeSw, Marking.SquareNwSe };
+        private static Marking[] _markingsSquare = new[] { Marking.SquareNeSw, Marking.SquareNS, Marking.SquareNwSe };
         private static Marking[] _markingsTriangle1 = new[] { Marking.TriangleUp, Marking.TriangleDown };
         private static Marking[] _markingsTriangle2 = new[] { Marking.TriangleLeft, Marking.TriangleRight };
         public static Marking Rotate(this Marking marking, int rotation)
@@ -39,68 +41,38 @@ namespace Hexamaze
                     throw new ArgumentException("Invalid marking.", "marking");
             }
         }
-
-        public static string ToMarkingString(this IEnumerable<Marking> markings) { return markings.Select(m => m == Marking.None ? "•" : ((int) m).ToString()).JoinString(); }
-
+        
         /// <summary>
-        ///     Turns all elements in the enumerable to strings and joins them using the specified <paramref
-        ///     name="separator"/> and the specified <paramref name="prefix"/> and <paramref name="suffix"/> for each string.</summary>
-        /// <param name="values">
-        ///     The sequence of elements to join into a string.</param>
-        /// <param name="separator">
-        ///     Optionally, a separator to insert between each element and the next.</param>
-        /// <param name="prefix">
-        ///     Optionally, a string to insert in front of each element.</param>
-        /// <param name="suffix">
-        ///     Optionally, a string to insert after each element.</param>
-        /// <param name="lastSeparator">
-        ///     Optionally, a separator to use between the second-to-last and the last element.</param>
-        /// <example>
-        ///     <code>
-        ///         // Returns "[Paris], [London], [Tokyo]"
-        ///         (new[] { "Paris", "London", "Tokyo" }).JoinString(", ", "[", "]")
-        ///         
-        ///         // Returns "[Paris], [London] and [Tokyo]"
-        ///         (new[] { "Paris", "London", "Tokyo" }).JoinString(", ", "[", "]", " and ");</code></example>
-        public static string JoinString<T>(this IEnumerable<T> values, string separator = null, string prefix = null, string suffix = null, string lastSeparator = null)
+        ///     Gets a value from a dictionary by key. If the key does not exist in the dictionary, the default value is
+        ///     returned instead.</summary>
+        /// <param name="dict">
+        ///     Dictionary to operate on.</param>
+        /// <param name="key">
+        ///     Key to look up.</param>
+        /// <param name="defaultVal">
+        ///     Value to return if key is not contained in the dictionary.</param>
+        public static TValue Get<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultVal)
         {
-            if (values == null)
-                throw new ArgumentNullException("values");
-            if (lastSeparator == null)
-                lastSeparator = separator;
+            if (dict == null)
+                throw new ArgumentNullException("dict");
+            if (key == null)
+                throw new ArgumentNullException("key", "Null values cannot be used for keys in dictionaries.");
+            TValue value;
+            if (dict.TryGetValue(key, out value))
+                return value;
+            else
+                return defaultVal;
+        }
 
-            using (var enumerator = values.GetEnumerator())
-            {
-                if (!enumerator.MoveNext())
-                    return "";
+        public static T PickRandom<T>(this IEnumerable<T> src)
+        {
+            if (src == null)
+                throw new ArgumentNullException("src");
 
-                // Optimise the case where there is only one element
-                var one = enumerator.Current;
-                if (!enumerator.MoveNext())
-                    return prefix + one + suffix;
-
-                // Optimise the case where there are only two elements
-                var two = enumerator.Current;
-                if (!enumerator.MoveNext())
-                {
-                    // Optimise the (common) case where there is no prefix/suffix; this prevents an array allocation when calling string.Concat()
-                    if (prefix == null && suffix == null)
-                        return one + lastSeparator + two;
-                    return prefix + one + suffix + lastSeparator + prefix + two + suffix;
-                }
-
-                StringBuilder sb = new StringBuilder()
-                    .Append(prefix).Append(one).Append(suffix).Append(separator)
-                    .Append(prefix).Append(two).Append(suffix);
-                var prev = enumerator.Current;
-                while (enumerator.MoveNext())
-                {
-                    sb.Append(separator).Append(prefix).Append(prev).Append(suffix);
-                    prev = enumerator.Current;
-                }
-                sb.Append(lastSeparator).Append(prefix).Append(prev).Append(suffix);
-                return sb.ToString();
-            }
+            var arr = src.ToArray();
+            if (arr.Length == 0)
+                throw new InvalidOperationException("Cannot pick a random element from an empty set.");
+            return arr[Rnd.Range(0, arr.Length)];
         }
     }
 }
