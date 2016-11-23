@@ -3,7 +3,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Keep Talking and Nobody Explodes Hexamaze Manual Page</title>
+	<title>Hexamaze — Keep Talking and Nobody Explodes Module</title>
 	<meta name="viewport" content="initial-scale=1">
 	<link href='//fonts.googleapis.com/css?family=Special+Elite' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" href="css/normalize.css">
@@ -56,12 +56,6 @@
             stroke: #aaa;
             stroke-width: 3px;
         }
-        svg.legend g.label-red      { transform: rotate(330deg); }
-        svg.legend g.label-yellow   { transform: rotate(030deg); }
-        svg.legend g.label-green    { transform: rotate(090deg); }
-        svg.legend g.label-cyan     { transform: rotate(150deg); }
-        svg.legend g.label-blue     { transform: rotate(210deg); }
-        svg.legend g.label-pink     { transform: rotate(270deg); }
 
         svg.legend .outline {
             stroke: black;
@@ -107,7 +101,7 @@
             <div class='legend'>
                 <!--%%-->
                 <svg class='legend' viewBox='-325 -375 650 750'>
-                    <g class='label label-red'><text text-anchor='middle' y='-280'>red</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label label-yellow'><text text-anchor='middle' y='-280'>yellow</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label label-green'><text text-anchor='middle' y='-280'>green</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label label-cyan'><text text-anchor='middle' y='-280'>cyan</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label label-blue'><text text-anchor='middle' y='-280'>blue</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label label-pink'><text text-anchor='middle' y='-280'>pink</text><path d='M-124.7-150v-200M124.7-150v-200' /></g>
+                    <g class='label' transform='rotate(330)'><text text-anchor='middle' y='-280'>red</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label' transform='rotate(390)'><text text-anchor='middle' y='-280'>yellow</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label' transform='rotate(450)'><text text-anchor='middle' y='-280'>green</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label' transform='rotate(510)'><text text-anchor='middle' y='-280'>cyan</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label' transform='rotate(570)'><text text-anchor='middle' y='-280'>blue</text><path d='M-124.7-150v-200M124.7-150v-200' /></g><g class='label' transform='rotate(630)'><text text-anchor='middle' y='-280'>pink</text><path d='M-124.7-150v-200M124.7-150v-200' /></g>
                     <polygon class='outline' points='18,-218.238401753679 36,-187.061487217439 72,-187.061487217439 90,-155.884572681199 126,-155.884572681199 144,-124.707658144959 180,-124.707658144959 198,-93.5307436087194 180,-62.3538290724796 198,-31.1769145362398 180,0 198,31.1769145362398 180,62.3538290724796 198,93.5307436087194 180,124.707658144959 144,124.707658144959 126,155.884572681199 90,155.884572681199 72,187.061487217439 36,187.061487217439 18,218.238401753679 -18,218.238401753679 -36,187.061487217439 -72,187.061487217439 -90,155.884572681199 -126,155.884572681199 -144,124.707658144959 -180,124.707658144959 -198,93.5307436087194 -180,62.3538290724796 -198,31.1769145362398 -180,0 -198,-31.1769145362398 -180,-62.3538290724796 -198,-93.5307436087194 -180,-124.707658144959 -144,-124.707658144959 -126,-155.884572681199 -90,-155.884572681199 -72,-187.061487217439 -36,-187.061487217439 -18,-218.238401753679' />
                     <circle class='dot' cx='0' cy='-187.061487217439' r='6' /><circle class='dot' cx='54' cy='-155.884572681199' r='6' /><circle class='dot' cx='108' cy='-124.707658144959' r='6' /><circle class='dot' cx='162' cy='-93.5307436087194' r='6' /><circle class='dot' cx='-54' cy='-155.884572681199' r='6' /><circle class='dot' cx='0' cy='-124.707658144959' r='6' /><circle class='dot' cx='54' cy='-93.5307436087194' r='6' /><circle class='dot' cx='108' cy='-62.3538290724796' r='6' /><circle class='dot' cx='162' cy='-31.1769145362398' r='6' /><circle class='dot' cx='-108' cy='-124.707658144959' r='6' /><circle class='dot' cx='-54' cy='-93.5307436087194' r='6' /><circle class='dot' cx='0' cy='-62.3538290724796' r='6' /><circle class='dot' cx='54' cy='-31.1769145362398' r='6' /><circle class='dot' cx='108' cy='0' r='6' /><circle class='dot' cx='162' cy='31.1769145362398' r='6' /><circle class='dot' cx='-162' cy='-93.5307436087194' r='6' /><circle class='dot' cx='-108' cy='-62.3538290724796' r='6' /><circle class='dot' cx='-54' cy='-31.1769145362398' r='6' /><circle class='dot' cx='0' cy='0' r='6' /><circle class='dot' cx='54' cy='31.1769145362398' r='6' /><circle class='dot' cx='108' cy='62.3538290724796' r='6' /><circle class='dot' cx='162' cy='93.5307436087194' r='6' /><circle class='dot' cx='-162' cy='-31.1769145362398' r='6' /><circle class='dot' cx='-108' cy='0' r='6' /><circle class='dot' cx='-54' cy='31.1769145362398' r='6' /><circle class='dot' cx='0' cy='62.3538290724796' r='6' /><circle class='dot' cx='54' cy='93.5307436087194' r='6' /><circle class='dot' cx='108' cy='124.707658144959' r='6' /><circle class='dot' cx='-162' cy='31.1769145362398' r='6' /><circle class='dot' cx='-108' cy='62.3538290724796' r='6' /><circle class='dot' cx='-54' cy='93.5307436087194' r='6' /><circle class='dot' cx='0' cy='124.707658144959' r='6' /><circle class='dot' cx='54' cy='155.884572681199' r='6' /><circle class='dot' cx='-162' cy='93.5307436087194' r='6' /><circle class='dot' cx='-108' cy='124.707658144959' r='6' /><circle class='dot' cx='-54' cy='155.884572681199' r='6' /><circle class='dot' cx='0' cy='187.061487217439' r='6' />
                 </svg><!--%%%-->
