@@ -586,6 +586,9 @@ public class HexamazeModule : MonoBehaviour
 
     private void PushButton(int direction)
     {
+        Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Buttons[direction].transform);
+        Buttons[direction].AddInteractionPunch(.1f);
+
         if (_isSolved)
             return;
 
