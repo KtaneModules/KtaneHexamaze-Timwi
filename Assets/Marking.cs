@@ -4,12 +4,10 @@
     {
         None,
         Circle,
-        SquareNS,
-        SquareNeSw,
-        SquareNwSe,
         TriangleUp,
         TriangleDown,
         TriangleLeft,
-        TriangleRight
+        TriangleRight,
+        Hexagon
     }
 }

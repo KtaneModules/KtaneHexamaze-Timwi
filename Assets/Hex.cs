@@ -82,5 +82,12 @@ namespace Hexamaze
             }
             throw new ArgumentException("Rotation must be between 0 and 5.", "rotation");
         }
+
+        public string ConvertCoordinates(int sideLength)
+        {
+            if (Q >= 0)
+                return string.Format("({0}, {1})", Q + sideLength, R + sideLength);
+            return string.Format("({0}, {1})", Q + sideLength, Q + R + sideLength);
+        }
     }
 }

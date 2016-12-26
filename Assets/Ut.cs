@@ -13,7 +13,6 @@ namespace Hexamaze
             return array;
         }
 
-        private static Marking[] _markingsSquare = new[] { Marking.SquareNeSw, Marking.SquareNS, Marking.SquareNwSe };
         private static Marking[] _markingsTriangle1 = new[] { Marking.TriangleUp, Marking.TriangleDown };
         private static Marking[] _markingsTriangle2 = new[] { Marking.TriangleLeft, Marking.TriangleRight };
         public static Marking Rotate(this Marking marking, int rotation)
@@ -22,11 +21,7 @@ namespace Hexamaze
             {
                 case Marking.None: return Marking.None;
                 case Marking.Circle: return Marking.Circle;
-
-                case Marking.SquareNeSw:
-                case Marking.SquareNwSe:
-                case Marking.SquareNS:
-                    return _markingsSquare[(Array.IndexOf(_markingsSquare, marking) + (rotation % 6 + 6) % 6) % 3];
+                case Marking.Hexagon: return Marking.Hexagon;
 
                 case Marking.TriangleUp:
                 case Marking.TriangleDown:
@@ -40,7 +35,7 @@ namespace Hexamaze
                     throw new ArgumentException("Invalid marking.", "marking");
             }
         }
-        
+
         /// <summary>
         ///     Gets a value from a dictionary by key. If the key does not exist in the dictionary, the default value is
         ///     returned instead.</summary>

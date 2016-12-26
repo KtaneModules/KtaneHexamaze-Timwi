@@ -13,6 +13,7 @@ GameObject:
   - 114: {fileID: 11489324}
   - 114: {fileID: 11496072}
   - 114: {fileID: 11489182}
+  - 114: {fileID: 114000011357455034}
   m_Layer: 0
   m_Name: HexamazeModule
   m_TagString: Untagged
@@ -258,7 +259,6 @@ MonoBehaviour:
   - {fileID: 114000013490028380}
   - {fileID: 114000011840806538}
   PlaneMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
-  DotMaterial: {fileID: 0}
   Playfield: {fileID: 1000011855068384}
   Pawn: {fileID: 1000013559156286}
   PawnMaterials:
@@ -1489,6 +1489,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   HighlightScale: {x: 1.5, y: 1.5, z: 1.5}
   OutlineAmount: 0
+--- !u!114 &114000011357455034
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 127088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -289456416, guid: 45b809be76fd7a3468b6f517bced6f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Settings: '{"CruelProbability": 0}'
 --- !u!114 &114000011498447574
 MonoBehaviour:
   m_ObjectHideFlags: 1

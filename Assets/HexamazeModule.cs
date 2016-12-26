@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Hexamaze;
 using UnityEngine;
@@ -18,7 +17,6 @@ public class HexamazeModule : MonoBehaviour
 
     public KMSelectable[] Buttons;
     public Mesh PlaneMesh;
-    public Material DotMaterial;
     public GameObject Playfield;
     public GameObject Pawn;
     public Material[] PawnMaterials;
@@ -36,7 +34,6 @@ public class HexamazeModule : MonoBehaviour
     {
         _isSolved = false;
 
-        Debug.Log("[Hexamaze] Started.");
         Module.OnActivate += ActivateModule;
         for (int i = 0; i < Buttons.Length; i++)
         {
@@ -44,24 +41,25 @@ public class HexamazeModule : MonoBehaviour
             Buttons[i].OnInteract += delegate { PushButton(j); return false; };
         }
 
-        markings[new Hex(-1, 8)] = Marking.SquareNeSw;
-        markings[new Hex(-6, -2)] = Marking.Circle;
-        markings[new Hex(5, 0)] = Marking.SquareNS;
-        markings[new Hex(0, 0)] = Marking.TriangleDown;
-        markings[new Hex(3, -9)] = Marking.SquareNS;
-        markings[new Hex(-3, -7)] = Marking.TriangleLeft;
-        markings[new Hex(-4, 3)] = Marking.Circle;
-        markings[new Hex(5, -7)] = Marking.SquareNeSw;
-        markings[new Hex(1, -3)] = Marking.Circle;
-        markings[new Hex(0, -6)] = Marking.SquareNwSe;
-        markings[new Hex(-1, 6)] = Marking.TriangleLeft;
-        markings[new Hex(-5, 5)] = Marking.TriangleDown;
-        markings[new Hex(7, -3)] = Marking.TriangleUp;
-        markings[new Hex(-9, 5)] = Marking.TriangleRight;
-        markings[new Hex(7, -6)] = Marking.Circle;
-        markings[new Hex(3, 2)] = Marking.SquareNwSe;
-        markings[new Hex(5, 5)] = Marking.TriangleUp;
-        markings[new Hex(-6, -1)] = Marking.TriangleRight;
+        markings[new Hex(0, 0)] = Marking.Hexagon;
+        markings[new Hex(-8, 7)] = Marking.TriangleLeft;
+        markings[new Hex(-5, 8)] = Marking.Hexagon;
+        markings[new Hex(5, -5)] = Marking.Circle;
+        markings[new Hex(-3, -3)] = Marking.TriangleDown;
+        markings[new Hex(5, 3)] = Marking.TriangleRight;
+        markings[new Hex(-6, 1)] = Marking.Circle;
+        markings[new Hex(2, -7)] = Marking.TriangleUp;
+        markings[new Hex(-6, 4)] = Marking.Circle;
+        markings[new Hex(-9, 4)] = Marking.Hexagon;
+        markings[new Hex(-1, 5)] = Marking.TriangleRight;
+        markings[new Hex(6, -8)] = Marking.TriangleLeft;
+        markings[new Hex(5, -1)] = Marking.TriangleDown;
+        markings[new Hex(2, 4)] = Marking.Circle;
+        markings[new Hex(3, -2)] = Marking.Hexagon;
+        markings[new Hex(-2, 8)] = Marking.Circle;
+        markings[new Hex(8, -4)] = Marking.Hexagon;
+        markings[new Hex(-3, 1)] = Marking.TriangleUp;
+        markings[new Hex(-1, -6)] = Marking.TriangleRight;
 
         walls[new Hex(0, 0)] = new bool?[] { true, false, true };
         walls[new Hex(0, -1)] = new bool?[] { false, true, false };
@@ -518,27 +516,39 @@ public class HexamazeModule : MonoBehaviour
         var queue = new Queue<QueueItem>();
         foreach (var goal in Enumerable.Range(0, 4).Select(x => new Hex(x - 3, -x).Rotate(_pawnColor) + _submazeCenter))
         {
+            var directions = new List<int>();
             if (hasWall(goal, _pawnColor) == false)
-                queue.Enqueue(new QueueItem { Hex = goal, Direction = _pawnColor, Distance = 1 });
+                directions.Add(_pawnColor);
             if (hasWall(goal, (_pawnColor + 1) % 6) == false)
-                queue.Enqueue(new QueueItem { Hex = goal, Direction = (_pawnColor + 1) % 6, Distance = 1 });
+                directions.Add((_pawnColor + 1) % 6);
+            if (directions.Count > 0)
+            {
+                var qi = new QueueItem { Hex = goal, Directions = directions.ToArray(), Distance = 1 };
+                queue.Enqueue(qi);
+            }
         }
         while (queue.Count > 0)
         {
             var item = queue.Dequeue();
             var already = dic.Get(item.Hex, null);
-            if (already != null && (already.Direction != null || already.Distance <= item.Distance))
+            if (already != null && (already.Directions != null || already.Distance <= item.Distance))
                 continue;
             dic[item.Hex] = item;
             var neigh = item.Hex.Neighbors;
             for (int i = 0; i < 6; i++)
                 if (hasWall(item.Hex, i) == false && (neigh[i] - _submazeCenter).Distance < 4)
-                    queue.Enqueue(new QueueItem { Hex = neigh[i], Direction = item.Direction == (i + 3) % 6 ? item.Direction : null, Distance = item.Distance + 1, Parent = item });
+                    queue.Enqueue(new QueueItem
+                    {
+                        Hex = neigh[i],
+                        Directions = item.Directions != null && item.Directions.Contains((i + 3) % 6) ? new[] { (i + 3) % 6 } : null,
+                        Distance = item.Distance + 1,
+                        Parent = item
+                    });
         }
 
-        placePawn((dic.Values.Where(inf => inf.Distance >= 4 && inf.Direction == null && !markings.ContainsKey(inf.Hex)).PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
+        placePawn((dic.Values.Where(inf => inf.Distance >= 4 && inf.Directions == null && !markings.ContainsKey(inf.Hex)).PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
 
-        Debug.LogFormat("[Hexamaze] Submaze center: {0}, submaze rotation: {1}, pawn: {2}, pawn color: {3}.", _submazeCenter, _submazeRotation, _pawnPos, _pawnColor);
+        Debug.LogFormat("[Hexamaze] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), _pawnColor);
 
         foreach (var hex in Hex.LargeHexagon(4))
         {
@@ -546,7 +556,7 @@ public class HexamazeModule : MonoBehaviour
             var origMarking = markings.Get(globalHex, Marking.None);
             var rotMarking = origMarking.Rotate(_submazeRotation);
             if (rotMarking != Marking.None)
-                Debug.LogFormat("[Hexamaze] Marking at {0} (screen)/{1} (maze): {2}, after rotation: {3}", hex, globalHex, origMarking, rotMarking);
+                Debug.LogFormat("[Hexamaze] Marking at {0} (screen)/{1} (maze): {2}, after rotation: {3}", hex.ConvertCoordinates(4), globalHex.ConvertCoordinates(12), origMarking, rotMarking);
             CreateGraphic("Marking " + hex, hex.GetCenter(1, 1e-4f), MarkingPngs.RawBytes[rotMarking]);
         }
     }
@@ -554,12 +564,12 @@ public class HexamazeModule : MonoBehaviour
     sealed class QueueItem
     {
         public Hex Hex;
-        public int? Direction;
+        public int[] Directions;
         public int Distance;
         public QueueItem Parent;
         public string Print()
         {
-            return string.Format("{3}{0} dir={1} dist={2}", Hex, Direction == null ? "null" : Direction.ToString(), Distance, Parent == null ? null : Parent.Print() + " → ");
+            return string.Format("{3}{0} dir={1} dist={2}", Hex, Directions == null ? "null" : string.Join("/", Directions.Select(d => d.ToString()).ToArray()), Distance, Parent == null ? null : Parent.Print() + " → ");
         }
     }
 
@@ -595,7 +605,9 @@ public class HexamazeModule : MonoBehaviour
         var globalPos = _pawnPos.Rotate(-_submazeRotation) + _submazeCenter;
         var newPawnPos = _pawnPos.Neighbors[direction];
         var newGlobalPos = globalPos.Neighbors[direction];
-        var msg = string.Format("[Hexamaze] Pawn wants to move from {0} to {1} (screen) / from {2} to {3} (maze).", _pawnPos, newPawnPos, globalPos, newGlobalPos);
+        var msg = string.Format("[Hexamaze] Pawn wants to move from {0} to {1} (screen) / from {2} to {3} (maze).",
+            _pawnPos.ConvertCoordinates(4), newPawnPos.ConvertCoordinates(4),
+            globalPos.ConvertCoordinates(12), newGlobalPos.ConvertCoordinates(12));
         var globalDirection = (direction - _submazeRotation + 6) % 6;
 
         // false = no wall, true = invisible wall, null = visible wall.
