@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Hexamaze;
 using UnityEngine;
@@ -531,7 +532,7 @@ public class HexamazeModule : MonoBehaviour
         {
             var item = queue.Dequeue();
             var already = dic.Get(item.Hex, null);
-            if (already != null && (already.Directions != null || already.Distance <= item.Distance))
+            if (already != null && ((already.Directions != null && item.Directions == null) || ((already.Directions == null) == (item.Directions == null) && already.Distance <= item.Distance)))
                 continue;
             dic[item.Hex] = item;
             var neigh = item.Hex.Neighbors;
@@ -546,7 +547,10 @@ public class HexamazeModule : MonoBehaviour
                     });
         }
 
-        placePawn((dic.Values.Where(inf => inf.Distance >= 4 && inf.Directions == null && !markings.ContainsKey(inf.Hex)).PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
+        var pool = dic.Values.Where(inf => inf.Distance >= 4 && inf.Directions == null && !markings.ContainsKey(inf.Hex));
+        //File.WriteAllLines(@"D:\temp\temp.txt", dic.Values.Select(v => v.ToString()).ToArray());
+        //File.AppendAllText(@"D:\temp\temp.txt", "Available starting locations: " + string.Join(", ", pool.Select(qi => qi.Hex.ToString()).ToArray()));
+        placePawn((pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
 
         Debug.LogFormat("[Hexamaze] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), _pawnColor);
 
@@ -567,9 +571,9 @@ public class HexamazeModule : MonoBehaviour
         public int[] Directions;
         public int Distance;
         public QueueItem Parent;
-        public string Print()
+        public override string ToString()
         {
-            return string.Format("{3}{0} dir={1} dist={2}", Hex, Directions == null ? "null" : string.Join("/", Directions.Select(d => d.ToString()).ToArray()), Distance, Parent == null ? null : Parent.Print() + " → ");
+            return string.Format("{3}{0} dir={1} dist={2}", Hex, Directions == null ? "null" : string.Join("/", Directions.Select(d => d.ToString()).ToArray()), Distance, Parent == null ? null : Parent.ToString() + " → ");
         }
     }
 
