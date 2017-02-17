@@ -31,8 +31,12 @@ public class HexamazeModule : MonoBehaviour
     private int _pawnColor;
     private bool _isSolved;
 
+    private static int _moduleIdCounter = 1;
+    private int _moduleId;
+
     void Start()
     {
+        _moduleId = _moduleIdCounter++;
         _isSolved = false;
 
         Module.OnActivate += ActivateModule;
@@ -552,7 +556,7 @@ public class HexamazeModule : MonoBehaviour
         //File.AppendAllText(@"D:\temp\temp.txt", "Available starting locations: " + string.Join(", ", pool.Select(qi => qi.Hex.ToString()).ToArray()));
         placePawn((pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
 
-        Debug.LogFormat("[Hexamaze] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), _pawnColor);
+        Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), _pawnColor, _moduleId);
 
         foreach (var hex in Hex.LargeHexagon(4))
         {
@@ -560,7 +564,7 @@ public class HexamazeModule : MonoBehaviour
             var origMarking = markings.Get(globalHex, Marking.None);
             var rotMarking = origMarking.Rotate(_submazeRotation);
             if (rotMarking != Marking.None)
-                Debug.LogFormat("[Hexamaze] Marking at {0} (screen)/{1} (maze): {2}, after rotation: {3}", hex.ConvertCoordinates(4), globalHex.ConvertCoordinates(12), origMarking, rotMarking);
+                Debug.LogFormat("[Hexamaze #{4}] Marking at {0} (screen)/{1} (maze): {2}, after rotation: {3}", hex.ConvertCoordinates(4), globalHex.ConvertCoordinates(12), origMarking, rotMarking, _moduleId);
             CreateGraphic("Marking " + hex, hex.GetCenter(1, 1e-4f), MarkingPngs.RawBytes[rotMarking]);
         }
     }
@@ -609,16 +613,17 @@ public class HexamazeModule : MonoBehaviour
         var globalPos = _pawnPos.Rotate(-_submazeRotation) + _submazeCenter;
         var newPawnPos = _pawnPos.Neighbors[direction];
         var newGlobalPos = globalPos.Neighbors[direction];
-        var msg = string.Format("[Hexamaze] Pawn wants to move from {0} to {1} (screen) / from {2} to {3} (maze).",
+        Debug.LogFormat("[Hexamaze #{4}] Moving from {0} to {1} (screen) / from {2} to {3} (maze).",
             _pawnPos.ConvertCoordinates(4), newPawnPos.ConvertCoordinates(4),
-            globalPos.ConvertCoordinates(12), newGlobalPos.ConvertCoordinates(12));
+            globalPos.ConvertCoordinates(12), newGlobalPos.ConvertCoordinates(12),
+            _moduleId);
         var globalDirection = (direction - _submazeRotation + 6) % 6;
 
         // false = no wall, true = invisible wall, null = visible wall.
         var wallInfo = hasWall(globalPos, globalDirection);
         if (wallInfo != false)
         {
-            msg += string.Format(" There’s {0} wall there.", wallInfo == null ? "a visible" : "an invisible");
+            Debug.LogFormat("[Hexamaze #{0}] There’s {1} wall there.", _moduleId, wallInfo == null ? "a visible" : "an invisible");
             Module.HandleStrike();
             if (wallInfo != null && newPawnPos.Distance < 4)
             {
@@ -632,29 +637,27 @@ public class HexamazeModule : MonoBehaviour
             {
                 var edges = newPawnPos.GetEdges(4).ToArray();
                 var globalEdges = edges.Select(e => (e - _submazeRotation + 6) % 6).ToArray();
-                msg += string.Format(" We walked out of the submaze through edge(s) {0} (screen) / {1} (maze).", string.Join(", ", edges.Select(e => e.ToString()).ToArray()), string.Join(", ", globalEdges.Select(e => e.ToString()).ToArray()));
+                Debug.LogFormat("[Hexamaze #{2}] Walking out of the submaze through edge(s) {0} (screen) / {1} (maze).{3}",
+                    string.Join(", ", edges.Select(e => e.ToString()).ToArray()), string.Join(", ", globalEdges.Select(e => e.ToString()).ToArray()), _moduleId,
+                    globalEdges.Contains(_pawnColor) ? " Solved!" : "");
 
                 if (globalEdges.Contains(_pawnColor))
                 {
-                    msg += " Solved!";
                     _isSolved = true;
                     Pawn.gameObject.SetActive(false);
                     Module.HandlePass();
                 }
                 else
                 {
-                    msg += string.Format(" However, we wanted edge {0} (screen) / {1} (maze). Strike.", (_pawnColor + _submazeRotation) % 6, _pawnColor);
+                    Debug.LogFormat("[Hexamaze #{2}] However, we wanted edge {0} (screen) / {1} (maze). Strike.", (_pawnColor + _submazeRotation) % 6, _pawnColor, _moduleId);
                     Module.HandleStrike();
                 }
             }
             else
             {
-                msg += " Acceptable.";
                 placePawn(newPawnPos);
             }
         }
-
-        Debug.Log(msg);
     }
 
     private static bool?[] _allFalse = new bool?[] { false, false, false };
