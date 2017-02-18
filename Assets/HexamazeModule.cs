@@ -556,7 +556,7 @@ public class HexamazeModule : MonoBehaviour
         //File.AppendAllText(@"D:\temp\temp.txt", "Available starting locations: " + string.Join(", ", pool.Select(qi => qi.Hex.ToString()).ToArray()));
         placePawn((pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
 
-        Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), _pawnColor, _moduleId);
+        Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
 
         foreach (var hex in Hex.LargeHexagon(4))
         {
