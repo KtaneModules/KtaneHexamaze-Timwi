@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Hexamaze;
@@ -39,7 +40,6 @@ public class HexamazeModule : MonoBehaviour
         _moduleId = _moduleIdCounter++;
         _isSolved = false;
 
-        Module.OnActivate += ActivateModule;
         for (int i = 0; i < Buttons.Length; i++)
         {
             var j = i;
@@ -664,7 +664,23 @@ public class HexamazeModule : MonoBehaviour
     private bool? hasWall(Hex hex, int n) { return walls.Get(n < 3 ? hex : hex.Neighbors[n], _allFalse)[n % 3]; }
     private void setWallVisible(Hex hex, int n) { walls[n < 3 ? hex : hex.Neighbors[n]][n % 3] = null; }
 
-    void ActivateModule()
+    KMSelectable[] ProcessTwitchCommand(string command)
     {
+        if (!command.StartsWith("move "))
+            return null;
+
+        return command.Substring("move ".Length).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(move =>
+        {
+            switch (move)
+            {
+                case "nw": case "10": case "upleft": case "leftup": return Buttons[0];
+                case "n": case "12": case "up": return Buttons[1];
+                case "ne": case "2": case "upright": case "rightup": return Buttons[2];
+                case "se": case "4": case "downright": case "rightdown": return Buttons[3];
+                case "s": case "6": case "down": return Buttons[4];
+                case "sw": case "8": case "downleft": case "leftdown": return Buttons[5];
+            }
+            return null;
+        }).TakeWhile(b => b != null).ToArray();
     }
 }
