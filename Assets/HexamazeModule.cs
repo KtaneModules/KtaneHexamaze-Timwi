@@ -518,6 +518,7 @@ public class HexamazeModule : MonoBehaviour
 
         // Find a starting position for the pawn that is at least 4 steps and one bend away
         var dic = new Dictionary<Hex, QueueItem>();
+        var dirDic = new Dictionary<Hex, List<int>>();
         var queue = new Queue<QueueItem>();
         foreach (var goal in Enumerable.Range(0, 4).Select(x => new Hex(x - 3, -x).Rotate(_pawnColor) + _submazeCenter))
         {
@@ -528,15 +529,16 @@ public class HexamazeModule : MonoBehaviour
                 directions.Add((_pawnColor + 1) % 6);
             if (directions.Count > 0)
             {
-                var qi = new QueueItem { Hex = goal, Directions = directions.ToArray(), Distance = 1 };
+                var qi = new QueueItem { Hex = goal, Distance = 1 };
                 queue.Enqueue(qi);
+                dirDic[goal] = directions;
             }
         }
         while (queue.Count > 0)
         {
             var item = queue.Dequeue();
             var already = dic.Get(item.Hex, null);
-            if (already != null && ((already.Directions != null && item.Directions == null) || ((already.Directions == null) == (item.Directions == null) && already.Distance <= item.Distance)))
+            if (already != null && already.Distance <= item.Distance)
                 continue;
             dic[item.Hex] = item;
             var neigh = item.Hex.Neighbors;
@@ -545,15 +547,31 @@ public class HexamazeModule : MonoBehaviour
                     queue.Enqueue(new QueueItem
                     {
                         Hex = neigh[i],
-                        Directions = item.Directions != null && item.Directions.Contains((i + 3) % 6) ? new[] { (i + 3) % 6 } : null,
                         Distance = item.Distance + 1,
                         Parent = item
                     });
         }
 
-        var pool = dic.Values.Where(inf => inf.Distance >= 4 && inf.Directions == null && !markings.ContainsKey(inf.Hex));
+        var pool = dic.Values.Where(inf =>
+        {
+            if (inf.Distance < 4 || markings.ContainsKey(inf.Hex))
+                return false;
+            List<int> list;
+            for (int dir = 0; dir < 6; dir++)
+                for (int dist = 0; dist < 7; dist++)
+                {
+                    var hex = inf.Hex + new Hex(-dist, 0).Rotate(dir);
+                    if (hasWall(hex, dir) != false)
+                        break;
+                    if (dirDic.TryGetValue(hex, out list) && list.Contains(dir))
+                        return false;
+                }
+            return true;
+        });
+
         //File.WriteAllLines(@"D:\temp\temp.txt", dic.Values.Select(v => v.ToString()).ToArray());
         //File.AppendAllText(@"D:\temp\temp.txt", "Available starting locations: " + string.Join(", ", pool.Select(qi => qi.Hex.ToString()).ToArray()));
+
         placePawn((pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
 
         Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
@@ -572,12 +590,11 @@ public class HexamazeModule : MonoBehaviour
     sealed class QueueItem
     {
         public Hex Hex;
-        public int[] Directions;
         public int Distance;
         public QueueItem Parent;
         public override string ToString()
         {
-            return string.Format("{3}{0} dir={1} dist={2}", Hex, Directions == null ? "null" : string.Join("/", Directions.Select(d => d.ToString()).ToArray()), Distance, Parent == null ? null : Parent.ToString() + " → ");
+            return string.Format("{2}{0} dist={1}", Hex, Distance, Parent == null ? null : Parent.ToString() + " → ");
         }
     }
 
