@@ -629,7 +629,7 @@ public class HexamazeModule : MonoBehaviour
 
         var globalPos = _pawnPos.Rotate(-_submazeRotation) + _submazeCenter;
         var newPawnPos = _pawnPos.Neighbors[direction];
-        var newGlobalPos = globalPos.Neighbors[direction];
+        var newGlobalPos = newPawnPos.Rotate(-_submazeRotation) + _submazeCenter;
         Debug.LogFormat("[Hexamaze #{4}] Moving from {0} to {1} (screen) / from {2} to {3} (maze).",
             _pawnPos.ConvertCoordinates(4), newPawnPos.ConvertCoordinates(4),
             globalPos.ConvertCoordinates(12), newGlobalPos.ConvertCoordinates(12),
