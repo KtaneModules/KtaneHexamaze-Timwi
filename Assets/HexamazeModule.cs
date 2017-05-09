@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Hexamaze;
 using UnityEngine;
@@ -34,6 +34,14 @@ public class HexamazeModule : MonoBehaviour
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
+
+    sealed class Movement
+    {
+        public bool Complete;
+        public Hex Destination;
+        public Action Action;
+    }
+    private Queue<Movement> _movements = new Queue<Movement>();
 
     void Start()
     {
@@ -569,10 +577,10 @@ public class HexamazeModule : MonoBehaviour
             return true;
         });
 
-        //File.WriteAllLines(@"D:\temp\temp.txt", dic.Values.Select(v => v.ToString()).ToArray());
-        //File.AppendAllText(@"D:\temp\temp.txt", "Available starting locations: " + string.Join(", ", pool.Select(qi => qi.Hex.ToString()).ToArray()));
-
-        placePawn((pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation));
+        var startHex = (pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation);
+        _pawnPos = startHex;
+        Pawn.transform.localPosition = startHex.GetCenter(1, 0);
+        StartCoroutine(movePawn(startHex));
 
         Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
 
@@ -587,6 +595,47 @@ public class HexamazeModule : MonoBehaviour
         }
     }
 
+    private float easeInOutQuad(float time, float start, float end, float duration)
+    {
+        time /= duration / 2;
+        if (time < 1)
+            return (end - start) / 2 * time * time + start;
+        time--;
+        return -(end - start) / 2 * (time * (time - 2) - 1) + start;
+    }
+
+    private IEnumerator movePawn(Hex curPawnPos)
+    {
+        const int numFrames = 6;
+
+        while (true)
+        {
+            while (_movements.Count == 0)
+                yield return null;
+
+            var movement = _movements.Dequeue();
+            var oldPos = curPawnPos.GetCenter(1, 0);
+            var newPos = movement.Destination.GetCenter(1, 0);
+
+            for (int i = 0; i <= numFrames; i++)
+            {
+                var pos1 = i <= numFrames / 2 || movement.Complete ? oldPos : newPos;
+                var pos2 = i <= numFrames / 2 || movement.Complete ? newPos : oldPos;
+                var vec = new Vector3(
+                    easeInOutQuad(i, pos1.x, pos2.x, numFrames),
+                    easeInOutQuad(i, pos1.y, pos2.y, numFrames),
+                    easeInOutQuad(i, pos1.z, pos2.z, numFrames));
+                Pawn.transform.localPosition = vec;
+                if (i == numFrames / 2 && movement.Action != null)
+                    movement.Action();
+                yield return null;
+            }
+
+            if (movement.Complete)
+                curPawnPos = movement.Destination;
+        }
+    }
+
     sealed class QueueItem
     {
         public Hex Hex;
@@ -596,12 +645,6 @@ public class HexamazeModule : MonoBehaviour
         {
             return string.Format("{2}{0} dist={1}", Hex, Distance, Parent == null ? null : Parent.ToString() + " → ");
         }
-    }
-
-    private void placePawn(Hex hex)
-    {
-        _pawnPos = hex;
-        Pawn.transform.localPosition = hex.GetCenter(1, 0);
     }
 
     private void CreateGraphic(string name, Vector3 position, byte[] rawBytes, float scale = 0.1f, int rotation = 0)
@@ -641,12 +684,20 @@ public class HexamazeModule : MonoBehaviour
         if (wallInfo != false)
         {
             Debug.LogFormat("[Hexamaze #{0}] There’s {1} wall there.", _moduleId, wallInfo == null ? "a visible" : "an invisible");
-            Module.HandleStrike();
-            if (wallInfo != null && newPawnPos.Distance < 4)
+            _movements.Enqueue(new Movement
             {
-                CreateGraphic(string.Format("Wall {0}/{1}", globalPos, globalDirection), _pawnPos.GetCenter(1, 1e-4f), MarkingPngs.LineRawBytes, scale: .15f, rotation: direction);
-                setWallVisible(globalPos, globalDirection);
-            }
+                Complete = false,
+                Destination = newPawnPos,
+                Action = () =>
+                {
+                    Module.HandleStrike();
+                    if (hasWall(globalPos, globalDirection) != null && newPawnPos.Distance < 4)
+                    {
+                        CreateGraphic(string.Format("Wall {0}/{1}", globalPos, globalDirection), _pawnPos.GetCenter(1, 1e-4f), MarkingPngs.LineRawBytes, scale: .15f, rotation: direction);
+                        setWallVisible(globalPos, globalDirection);
+                    }
+                }
+            });
         }
         else
         {
@@ -659,20 +710,31 @@ public class HexamazeModule : MonoBehaviour
                     globalEdges.Contains(_pawnColor) ? " Solved!" : "");
 
                 if (globalEdges.Contains(_pawnColor))
-                {
                     _isSolved = true;
-                    Pawn.gameObject.SetActive(false);
-                    Module.HandlePass();
-                }
-                else
+
+                _movements.Enqueue(new Movement
                 {
-                    Debug.LogFormat("[Hexamaze #{2}] However, we wanted edge {0} (screen) / {1} (maze). Strike.", (_pawnColor + _submazeRotation) % 6, _pawnColor, _moduleId);
-                    Module.HandleStrike();
-                }
+                    Complete = false,
+                    Destination = newPawnPos,
+                    Action = () =>
+                    {
+                        if (globalEdges.Contains(_pawnColor))
+                        {
+                            Pawn.gameObject.SetActive(false);
+                            Module.HandlePass();
+                        }
+                        else
+                        {
+                            Debug.LogFormat("[Hexamaze #{2}] However, we wanted edge {0} (screen) / {1} (maze). Strike.", (_pawnColor + _submazeRotation) % 6, _pawnColor, _moduleId);
+                            Module.HandleStrike();
+                        }
+                    }
+                });
             }
             else
             {
-                placePawn(newPawnPos);
+                _movements.Enqueue(new Movement { Destination = newPawnPos, Complete = true });
+                _pawnPos = newPawnPos;
             }
         }
     }
