@@ -745,10 +745,12 @@ public class HexamazeModule : MonoBehaviour
 
     KMSelectable[] ProcessTwitchCommand(string command)
     {
+        command = command.Trim().ToLowerInvariant();
+
         if (!command.StartsWith("move "))
             return null;
 
-        return command.Substring("move ".Length).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(move =>
+        var moves = command.Substring("move ".Length).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(move =>
         {
             switch (move)
             {
@@ -760,6 +762,9 @@ public class HexamazeModule : MonoBehaviour
                 case "sw": case "8": case "downleft": case "leftdown": return Buttons[5];
             }
             return null;
-        }).TakeWhile(b => b != null).ToArray();
+        }).ToArray();
+
+        // .Contains(null) is broken in Unity’s version of Mono!! (unbelievable)
+        return moves.Any(m => m == null) ? null : moves;
     }
 }
