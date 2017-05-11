@@ -38,6 +38,7 @@ public class HexamazeModule : MonoBehaviour
     sealed class Movement
     {
         public bool Complete;
+        public bool IsSolve;
         public Hex Destination;
         public Action Action;
     }
@@ -665,13 +666,14 @@ public class HexamazeModule : MonoBehaviour
         mr.material.shader = Shader.Find("Unlit/Transparent");
     }
 
-    private void PushButton(int direction)
+    enum ButtonResult { None, Strike, Solve };
+    private ButtonResult PushButton(int direction)
     {
         Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Buttons[direction].transform);
         Buttons[direction].AddInteractionPunch(.1f);
 
         if (_isSolved)
-            return;
+            return ButtonResult.None;
 
         var globalPos = _pawnPos.Rotate(-_submazeRotation) + _submazeCenter;
         var newPawnPos = _pawnPos.Neighbors[direction];
@@ -701,73 +703,98 @@ public class HexamazeModule : MonoBehaviour
                     }
                 }
             });
+            return ButtonResult.Strike;
         }
-        else
+
+        if (newPawnPos.Distance >= 4)
         {
-            if (newPawnPos.Distance >= 4)
+            var edges = newPawnPos.GetEdges(4).ToArray();
+            var globalEdges = edges.Select(e => (e - _submazeRotation + 6) % 6).ToArray();
+            Debug.LogFormat("[Hexamaze #{2}] Walking out of the submaze through edge(s) {0} (screen) / {1} (maze).{3}",
+                string.Join(", ", edges.Select(e => e.ToString()).ToArray()), string.Join(", ", globalEdges.Select(e => e.ToString()).ToArray()), _moduleId,
+                globalEdges.Contains(_pawnColor) ? " Solved!" : "");
+
+            if (globalEdges.Contains(_pawnColor))
             {
-                var edges = newPawnPos.GetEdges(4).ToArray();
-                var globalEdges = edges.Select(e => (e - _submazeRotation + 6) % 6).ToArray();
-                Debug.LogFormat("[Hexamaze #{2}] Walking out of the submaze through edge(s) {0} (screen) / {1} (maze).{3}",
-                    string.Join(", ", edges.Select(e => e.ToString()).ToArray()), string.Join(", ", globalEdges.Select(e => e.ToString()).ToArray()), _moduleId,
-                    globalEdges.Contains(_pawnColor) ? " Solved!" : "");
-
-                if (globalEdges.Contains(_pawnColor))
-                    _isSolved = true;
-
+                // Maze is solved!
+                _isSolved = true;
+                _movements.Enqueue(new Movement
+                {
+                    Complete = false,
+                    IsSolve = true,
+                    Destination = newPawnPos,
+                    Action = () =>
+                    {
+                        Pawn.gameObject.SetActive(false);
+                        Module.HandlePass();
+                    }
+                });
+                return ButtonResult.Solve;
+            }
+            else
+            {
+                // Leaving maze through wrong edge
                 _movements.Enqueue(new Movement
                 {
                     Complete = false,
                     Destination = newPawnPos,
                     Action = () =>
                     {
-                        if (globalEdges.Contains(_pawnColor))
-                        {
-                            Pawn.gameObject.SetActive(false);
-                            Module.HandlePass();
-                        }
-                        else
-                        {
-                            Debug.LogFormat("[Hexamaze #{2}] However, we wanted edge {0} (screen) / {1} (maze). Strike.", (_pawnColor + _submazeRotation) % 6, _pawnColor, _moduleId);
-                            Module.HandleStrike();
-                        }
+                        Debug.LogFormat("[Hexamaze #{2}] However, we wanted edge {0} (screen) / {1} (maze). Strike.", (_pawnColor + _submazeRotation) % 6, _pawnColor, _moduleId);
+                        Module.HandleStrike();
                     }
                 });
-            }
-            else
-            {
-                _movements.Enqueue(new Movement { Destination = newPawnPos, Complete = true });
-                _pawnPos = newPawnPos;
+                return ButtonResult.Strike;
             }
         }
+
+        _movements.Enqueue(new Movement { Destination = newPawnPos, Complete = true });
+        _pawnPos = newPawnPos;
+        return ButtonResult.None;
     }
 
     private static bool?[] _allFalse = new bool?[] { false, false, false };
     private bool? hasWall(Hex hex, int n) { return walls.Get(n < 3 ? hex : hex.Neighbors[n], _allFalse)[n % 3]; }
     private void setWallVisible(Hex hex, int n) { walls[n < 3 ? hex : hex.Neighbors[n]][n % 3] = null; }
 
-    KMSelectable[] ProcessTwitchCommand(string command)
+    IEnumerator ProcessTwitchCommand(string command)
     {
         command = command.Trim().ToLowerInvariant();
 
         if (!command.StartsWith("move "))
-            return null;
+            yield break;
 
         var moves = command.Substring("move ".Length).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(move =>
         {
             switch (move)
             {
-                case "nw": case "10": case "upleft": case "leftup": return Buttons[0];
-                case "n": case "12": case "up": return Buttons[1];
-                case "ne": case "2": case "upright": case "rightup": return Buttons[2];
-                case "se": case "4": case "downright": case "rightdown": return Buttons[3];
-                case "s": case "6": case "down": return Buttons[4];
-                case "sw": case "8": case "downleft": case "leftdown": return Buttons[5];
+                case "nw": case "10": case "upleft": case "leftup": return 0;
+                case "n": case "12": case "up": return 1;
+                case "ne": case "2": case "upright": case "rightup": return 2;
+                case "se": case "4": case "downright": case "rightdown": return 3;
+                case "s": case "6": case "down": return 4;
+                case "sw": case "8": case "downleft": case "leftdown": return 5;
             }
-            return null;
+            return -1;
         }).ToArray();
 
-        // .Contains(null) is broken in Unity’s version of Mono!! (unbelievable)
-        return moves.Any(m => m == null) ? null : moves;
+        if (moves.Any(m => m == -1))
+            yield break;
+
+        foreach (var move in moves)
+        {
+            var result = PushButton(move);
+            switch (result)
+            {
+                case ButtonResult.Solve:
+                    yield return "solve";
+                    yield break;
+                case ButtonResult.Strike:
+                    yield return "strike";
+                    yield break;
+            }
+            yield return new WaitForSeconds(.125f);
+            yield return "trycancel";
+        }
     }
 }
