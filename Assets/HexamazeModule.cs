@@ -581,6 +581,7 @@ public class HexamazeModule : MonoBehaviour
         _pawnPos = startHex;
         Pawn.transform.localPosition = startHex.GetCenter(1, 0);
         StartCoroutine(movePawn(startHex));
+        Bomb.OnBombExploded += delegate { StopAllCoroutines(); };
 
         Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
 
@@ -608,31 +609,33 @@ public class HexamazeModule : MonoBehaviour
     {
         const int numFrames = 6;
 
-        while (true)
+        while (!_isSolved || _movements.Count > 0)
         {
-            while (_movements.Count == 0)
-                yield return null;
+            yield return null;
 
-            var movement = _movements.Dequeue();
-            var oldPos = curPawnPos.GetCenter(1, 0);
-            var newPos = movement.Destination.GetCenter(1, 0);
-
-            for (int i = 0; i <= numFrames; i++)
+            if (_movements.Count > 0)
             {
-                var pos1 = i <= numFrames / 2 || movement.Complete ? oldPos : newPos;
-                var pos2 = i <= numFrames / 2 || movement.Complete ? newPos : oldPos;
-                var vec = new Vector3(
-                    easeInOutQuad(i, pos1.x, pos2.x, numFrames),
-                    easeInOutQuad(i, pos1.y, pos2.y, numFrames),
-                    easeInOutQuad(i, pos1.z, pos2.z, numFrames));
-                Pawn.transform.localPosition = vec;
-                if (i == numFrames / 2 && movement.Action != null)
-                    movement.Action();
-                yield return null;
-            }
+                var movement = _movements.Dequeue();
+                var oldPos = curPawnPos.GetCenter(1, 0);
+                var newPos = movement.Destination.GetCenter(1, 0);
 
-            if (movement.Complete)
-                curPawnPos = movement.Destination;
+                for (int i = 0; i <= numFrames; i++)
+                {
+                    var pos1 = i <= numFrames / 2 || movement.Complete ? oldPos : newPos;
+                    var pos2 = i <= numFrames / 2 || movement.Complete ? newPos : oldPos;
+                    var vec = new Vector3(
+                        easeInOutQuad(i, pos1.x, pos2.x, numFrames),
+                        easeInOutQuad(i, pos1.y, pos2.y, numFrames),
+                        easeInOutQuad(i, pos1.z, pos2.z, numFrames));
+                    Pawn.transform.localPosition = vec;
+                    if (i == numFrames / 2 && movement.Action != null)
+                        movement.Action();
+                    yield return null;
+                }
+
+                if (movement.Complete)
+                    curPawnPos = movement.Destination;
+            }
         }
     }
 
