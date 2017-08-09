@@ -578,13 +578,13 @@ public class HexamazeModule : MonoBehaviour
             return true;
         });
 
-        var startHex = (pool.PickRandom().Hex - _submazeCenter).Rotate(_submazeRotation);
-        _pawnPos = startHex;
-        Pawn.transform.localPosition = startHex.GetCenter(1, 0);
-        StartCoroutine(movePawn(startHex));
+        var startHex = pool.PickRandom().Hex;
+        _pawnPos = (startHex - _submazeCenter).Rotate(_submazeRotation);
+        Pawn.transform.localPosition = _pawnPos.GetCenter(1, 0);
+        StartCoroutine(movePawn(_pawnPos));
         Bomb.OnBombExploded += delegate { StopAllCoroutines(); };
 
-        Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation, _pawnPos.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
+        Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}° clockwise, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation * 60, startHex.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
 
         foreach (var hex in Hex.LargeHexagon(4))
         {
