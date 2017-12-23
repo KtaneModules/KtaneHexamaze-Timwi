@@ -23,6 +23,9 @@ public class HexamazeModule : MonoBehaviour
     public GameObject Pawn;
     public Material[] PawnMaterials;
 
+    public Texture[] MarkingTextures;
+    public Texture LineTexture;
+
     private Dictionary<Hex, Marking> markings = new Dictionary<Hex, Marking>();
     private Dictionary<Hex, bool?[]> walls = new Dictionary<Hex, bool?[]>();
 
@@ -584,7 +587,7 @@ public class HexamazeModule : MonoBehaviour
         StartCoroutine(movePawn(_pawnPos));
         Bomb.OnBombExploded += delegate { StopAllCoroutines(); };
 
-        Debug.LogFormat("[Hexamaze #{4}] Submaze center: {0}, submaze rotation: {1}° clockwise, pawn: {2} (global), pawn color: {3}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation * 60, startHex.ConvertCoordinates(12), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
+        Debug.LogFormat("[Hexamaze #{5}] Submaze center: {0}, submaze rotation: {1}° clockwise, pawn: {2} (maze)/{3} (screen), pawn color: {4}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation * 60, startHex.ConvertCoordinates(12), _pawnPos.ConvertCoordinates(4), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
 
         foreach (var hex in Hex.LargeHexagon(4))
         {
@@ -593,7 +596,7 @@ public class HexamazeModule : MonoBehaviour
             var rotMarking = origMarking.Rotate(_submazeRotation);
             if (rotMarking != Marking.None)
                 Debug.LogFormat("[Hexamaze #{4}] Marking at {0} (screen)/{1} (maze): {2}, after rotation: {3}", hex.ConvertCoordinates(4), globalHex.ConvertCoordinates(12), origMarking, rotMarking, _moduleId);
-            CreateGraphic("Marking " + hex, hex.GetCenter(1, 1e-4f), MarkingPngs.RawBytes[rotMarking]);
+            CreateGraphic("Marking " + hex, hex.GetCenter(1, 1e-4f), MarkingTextures.First(tx => tx.name == rotMarking.ToString()));
         }
     }
 
@@ -651,7 +654,7 @@ public class HexamazeModule : MonoBehaviour
         }
     }
 
-    private void CreateGraphic(string name, Vector3 position, byte[] rawBytes, float scale = 0.1f, int rotation = 0)
+    private void CreateGraphic(string name, Vector3 position, Texture tex, float scale = 0.1f, int rotation = 0)
     {
         var go = new GameObject { name = name };
         go.transform.parent = Playfield.transform;
@@ -660,8 +663,6 @@ public class HexamazeModule : MonoBehaviour
         go.transform.localScale = new Vector3(scale, scale, scale);
         go.AddComponent<MeshFilter>().mesh = PlaneMesh;
         var mr = go.AddComponent<MeshRenderer>();
-        var tex = new Texture2D(2, 2);
-        tex.LoadImage(rawBytes);
         mr.material.mainTexture = tex;
         mr.material.shader = Shader.Find("Unlit/Transparent");
     }
@@ -698,7 +699,7 @@ public class HexamazeModule : MonoBehaviour
                     Module.HandleStrike();
                     if (hasWall(globalPos, globalDirection) != null && newPawnPos.Distance < 4)
                     {
-                        CreateGraphic(string.Format("Wall {0}/{1}", globalPos, globalDirection), _pawnPos.GetCenter(1, 1e-4f), MarkingPngs.LineRawBytes, scale: .15f, rotation: direction);
+                        CreateGraphic(string.Format("Wall {0}/{1}", globalPos, globalDirection), _pawnPos.GetCenter(1, 1e-4f), LineTexture, scale: .15f, rotation: direction - 1);
                         setWallVisible(globalPos, globalDirection);
                     }
                 }
