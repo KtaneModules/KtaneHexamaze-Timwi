@@ -611,7 +611,7 @@ public class HexamazeModule : MonoBehaviour
 
     private IEnumerator movePawn(Hex curPawnPos)
     {
-        const int numFrames = 6;
+        const float duration = .1f;
 
         while (!_isSolved || _movements.Count > 0)
         {
@@ -620,22 +620,28 @@ public class HexamazeModule : MonoBehaviour
             if (_movements.Count > 0)
             {
                 var movement = _movements.Dequeue();
+                var halfwayAction = movement.Action;
                 var oldPos = curPawnPos.GetCenter(1, 0);
                 var newPos = movement.Destination.GetCenter(1, 0);
-
-                for (int i = 0; i <= numFrames; i++)
+                var elapsed = 0f;
+                while (elapsed < duration)
                 {
-                    var pos1 = i <= numFrames / 2 || movement.Complete ? oldPos : newPos;
-                    var pos2 = i <= numFrames / 2 || movement.Complete ? newPos : oldPos;
-                    var vec = new Vector3(
-                        easeInOutQuad(i, pos1.x, pos2.x, numFrames),
-                        easeInOutQuad(i, pos1.y, pos2.y, numFrames),
-                        easeInOutQuad(i, pos1.z, pos2.z, numFrames));
-                    Pawn.transform.localPosition = vec;
-                    if (i == numFrames / 2 && movement.Action != null)
-                        movement.Action();
                     yield return null;
+                    elapsed += Time.deltaTime;
+
+                    var pos1 = elapsed <= duration / 2 || movement.Complete ? oldPos : newPos;
+                    var pos2 = elapsed <= duration / 2 || movement.Complete ? newPos : oldPos;
+                    Pawn.transform.localPosition = new Vector3(
+                        easeInOutQuad(elapsed, pos1.x, pos2.x, duration),
+                        easeInOutQuad(elapsed, pos1.y, pos2.y, duration),
+                        easeInOutQuad(elapsed, pos1.z, pos2.z, duration));
+                    if (elapsed >= duration / 2 && halfwayAction != null)
+                    {
+                        halfwayAction();
+                        halfwayAction = null;
+                    }
                 }
+                Pawn.transform.localPosition = movement.Complete ? newPos : oldPos;
 
                 if (movement.Complete)
                     curPawnPos = movement.Destination;
@@ -758,14 +764,18 @@ public class HexamazeModule : MonoBehaviour
     private bool? hasWall(Hex hex, int n) { return walls.Get(n < 3 ? hex : hex.Neighbors[n], _allFalse)[n % 3]; }
     private void setWallVisible(Hex hex, int n) { walls[n < 3 ? hex : hex.Neighbors[n]][n % 3] = null; }
 
+#pragma warning disable 414
+    private string TwitchHelpMessage = "Specify movements as clockface (e.g. “!{0} 12 2 6 4 8”), cardinal (e.g. “!{0} n ne s se sw”) or directions (e.g. “!{0} up upright down downright downleft”).";
+#pragma warning restore 414
+
     IEnumerator ProcessTwitchCommand(string command)
     {
-        command = command.Trim().ToLowerInvariant();
+        var pieces = command.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var skip = 0;
+        if (pieces.Length > 0 && pieces[0] == "move")
+            skip = 1;
 
-        if (!command.StartsWith("move "))
-            yield break;
-
-        var moves = command.Substring("move ".Length).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(move =>
+        var moves = pieces.Skip(skip).Select(move =>
         {
             switch (move)
             {
@@ -781,6 +791,8 @@ public class HexamazeModule : MonoBehaviour
 
         if (moves.Any(m => m == -1))
             yield break;
+
+        yield return null;
 
         foreach (var move in moves)
         {
