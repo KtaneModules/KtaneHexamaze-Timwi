@@ -22,6 +22,7 @@ public class HexamazeModule : MonoBehaviour
     public GameObject Playfield;
     public GameObject Pawn;
     public Material[] PawnMaterials;
+    public TextMesh ColorblindIndicator;
 
     public Texture[] MarkingTextures;
     public Texture LineTexture;
@@ -527,6 +528,10 @@ public class HexamazeModule : MonoBehaviour
         _submazeRotation = Rnd.Range(0, 6);
         _pawnColor = Rnd.Range(0, 6);
         Pawn.GetComponent<MeshRenderer>().material = PawnMaterials[_pawnColor];
+        var pawnColorStr = "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor];
+
+        ColorblindIndicator.text = pawnColorStr;
+        ColorblindIndicator.gameObject.SetActive(GetComponent<KMColorblindMode>().ColorblindModeActive);
 
         // Find a starting position for the pawn that is at least 4 steps and one bend away
         var dic = new Dictionary<Hex, QueueItem>();
@@ -587,7 +592,7 @@ public class HexamazeModule : MonoBehaviour
         StartCoroutine(movePawn(_pawnPos));
         Bomb.OnBombExploded += delegate { StopAllCoroutines(); };
 
-        Debug.LogFormat("[Hexamaze #{5}] Submaze center: {0}, submaze rotation: {1}° clockwise, pawn: {2} (maze)/{3} (screen), pawn color: {4}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation * 60, startHex.ConvertCoordinates(12), _pawnPos.ConvertCoordinates(4), "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor], _moduleId);
+        Debug.LogFormat("[Hexamaze #{5}] Submaze center: {0}, submaze rotation: {1}° clockwise, pawn: {2} (maze)/{3} (screen), pawn color: {4}.", _submazeCenter.ConvertCoordinates(12), _submazeRotation * 60, startHex.ConvertCoordinates(12), _pawnPos.ConvertCoordinates(4), pawnColorStr, _moduleId);
 
         foreach (var hex in Hex.LargeHexagon(4))
         {
@@ -734,6 +739,7 @@ public class HexamazeModule : MonoBehaviour
                     {
                         Pawn.gameObject.SetActive(false);
                         Module.HandlePass();
+                        Audio.PlaySoundAtTransform("Hexamaze-solve-sound", transform);
                     }
                 });
                 return ButtonResult.Solve;
@@ -765,12 +771,15 @@ public class HexamazeModule : MonoBehaviour
     private void setWallVisible(Hex hex, int n) { walls[n < 3 ? hex : hex.Neighbors[n]][n % 3] = null; }
 
 #pragma warning disable 414
-    private string TwitchHelpMessage = "Specify movements as clockface (e.g. “!{0} 12 2 6 4 8”), cardinal (e.g. “!{0} n ne s se sw”) or directions (e.g. “!{0} up upright down downright downleft”).";
+    private readonly string TwitchHelpMessage = "Specify movements as clockface (e.g. “!{0} 12 2 6 4 8”), cardinal (e.g. “!{0} n ne s se sw”) or directions (e.g. “!{0} up upright down downright downleft”). Use “!{0} colorblind” to show the color of the pawn.";
 #pragma warning restore 414
 
     IEnumerator ProcessTwitchCommand(string command)
     {
         var pieces = command.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (pieces.Length == 1 && pieces[0] == "colorblind")
+            ColorblindIndicator.gameObject.SetActive(true);
+
         var skip = 0;
         if (pieces.Length > 0 && pieces[0] == "move")
             skip = 1;
