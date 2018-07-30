@@ -778,7 +778,11 @@ public class HexamazeModule : MonoBehaviour
     {
         var pieces = command.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         if (pieces.Length == 1 && pieces[0] == "colorblind")
+        {
+            yield return null;
             ColorblindIndicator.gameObject.SetActive(true);
+            yield break;
+        }
 
         var skip = 0;
         if (pieces.Length > 0 && pieces[0] == "move")
