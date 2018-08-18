@@ -739,7 +739,7 @@ public class HexamazeModule : MonoBehaviour
                     {
                         Pawn.gameObject.SetActive(false);
                         Module.HandlePass();
-                        Audio.PlaySoundAtTransform("Hexamaze-solve-sound", transform);
+                        Audio.PlaySoundAtTransform(Rnd.Range(0, 100) == 0 ? "Hexamaze-solve-sound2" : "Hexamaze-solve-sound", transform);
                     }
                 });
                 return ButtonResult.Solve;
