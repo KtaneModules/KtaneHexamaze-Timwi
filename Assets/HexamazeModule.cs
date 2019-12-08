@@ -605,15 +605,6 @@ public class HexamazeModule : MonoBehaviour
         }
     }
 
-    private float easeInOutQuad(float time, float start, float end, float duration)
-    {
-        time /= duration / 2;
-        if (time < 1)
-            return (end - start) / 2 * time * time + start;
-        time--;
-        return -(end - start) / 2 * (time * (time - 2) - 1) + start;
-    }
-
     private IEnumerator movePawn(Hex curPawnPos)
     {
         const float duration = .1f;
@@ -637,9 +628,9 @@ public class HexamazeModule : MonoBehaviour
                     var pos1 = elapsed <= duration / 2 || movement.Complete ? oldPos : newPos;
                     var pos2 = elapsed <= duration / 2 || movement.Complete ? newPos : oldPos;
                     Pawn.transform.localPosition = new Vector3(
-                        easeInOutQuad(elapsed, pos1.x, pos2.x, duration),
-                        easeInOutQuad(elapsed, pos1.y, pos2.y, duration),
-                        easeInOutQuad(elapsed, pos1.z, pos2.z, duration));
+                        Easing.InOutQuad(elapsed, pos1.x, pos2.x, duration),
+                        Easing.InOutQuad(elapsed, pos1.y, pos2.y, duration),
+                        Easing.InOutQuad(elapsed, pos1.z, pos2.z, duration));
                     if (elapsed >= duration / 2 && halfwayAction != null)
                     {
                         halfwayAction();
