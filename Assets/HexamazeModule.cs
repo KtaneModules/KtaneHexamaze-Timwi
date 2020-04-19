@@ -729,6 +729,7 @@ public class HexamazeModule : MonoBehaviour
                     Action = () =>
                     {
                         Pawn.gameObject.SetActive(false);
+                        ColorblindIndicator.gameObject.SetActive(false);
                         Module.HandlePass();
                         Audio.PlaySoundAtTransform(Rnd.Range(0, 100) == 0 ? "Hexamaze-solve-sound2" : "Hexamaze-solve-sound", transform);
                     }
@@ -770,6 +771,8 @@ public class HexamazeModule : MonoBehaviour
         var pieces = command.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         if (pieces.Length == 1 && pieces[0] == "colorblind")
         {
+            if (_isSolved)
+                yield break;
             yield return null;
             ColorblindIndicator.gameObject.SetActive(true);
             yield break;
