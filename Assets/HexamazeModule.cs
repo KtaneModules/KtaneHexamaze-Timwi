@@ -35,6 +35,7 @@ public class HexamazeModule : MonoBehaviour
     private Hex _pawnPos;
     private int _pawnColor;
     private bool _isSolved;
+    private bool _animating;
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
@@ -615,6 +616,7 @@ public class HexamazeModule : MonoBehaviour
 
             if (_movements.Count > 0)
             {
+                _animating = true;
                 var movement = _movements.Dequeue();
                 var halfwayAction = movement.Action;
                 var oldPos = curPawnPos.GetCenter(1, 0);
@@ -641,6 +643,8 @@ public class HexamazeModule : MonoBehaviour
 
                 if (movement.Complete)
                     curPawnPos = movement.Destination;
+
+                _animating = false;
             }
         }
     }
@@ -816,5 +820,67 @@ public class HexamazeModule : MonoBehaviour
             yield return new WaitForSeconds(.125f);
             yield return "trycancel";
         }
+    }
+
+    IEnumerator TwitchHandleForcedSolve()
+    {
+        // Find the hexes along the correct edge where we are allowed to exit the maze
+        var exitHexes = Hex.LargeHexagon(5).Where(h => h.GetEdges(4).Contains(_pawnColor)).Select(h => h + _submazeCenter).ToArray();
+        Debug.LogFormat(@"Exit hexes: {0}", exitHexes.Join(", "));
+
+        // Use breadth-first search to find a path to any one of those hexes
+        var already = new HashSet<Hex>();
+        var parents = new Dictionary<Hex, Hex>();
+        var q = new Queue<Hex>();
+        var startHex = _pawnPos.Rotate(-_submazeRotation) + _submazeCenter;
+        q.Enqueue(startHex);
+        var exitHex = new Hex(0, 0);
+
+        while (q.Count > 0)
+        {
+            var h = q.Dequeue();
+            if (!already.Add(h))
+                continue;
+            if (exitHexes.Contains(h))
+            {
+                exitHex = h;
+                goto found;
+            }
+
+            var neighbors = h.Neighbors;
+            foreach (var neighborIx in Enumerable.Range(0, 6).Where(dir => hasWall(h, dir) == false && ((h - _submazeCenter).Distance < 4 || exitHexes.Contains(h))))
+            {
+                if (already.Contains(neighbors[neighborIx]))
+                    continue;
+                q.Enqueue(neighbors[neighborIx]);
+                parents[neighbors[neighborIx]] = h;
+            }
+        }
+
+        throw new Exception("There is a bug in this module’s auto-solve handler. Please contact Timwi about this.");
+
+        found:;
+
+        // Reconstruct out the path by tracing the steps backwards
+        var path = new List<Hex>();
+        var hex = exitHex;
+        while (hex != startHex)
+        {
+            path.Add(hex);
+            hex = parents[hex];
+        }
+
+        // Execute the movements by pressing the right buttons
+        for (var i = path.Count - 1; i >= 0; i--)
+        {
+            var globalPos = _pawnPos.Rotate(-_submazeRotation) + _submazeCenter;
+            var globalDir = Array.IndexOf(globalPos.Neighbors, path[i]);
+            var dir = (globalDir + _submazeRotation) % 6;
+            Buttons[dir].OnInteract();
+            yield return new WaitForSeconds(.1f);
+        }
+
+        while (_movements.Count > 0 || _animating)
+            yield return true;
     }
 }
