@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 11496072}
   - component: {fileID: 11489182}
   - component: {fileID: 114455551122943818}
+  - component: {fileID: 114392466800587312}
   m_Layer: 0
   m_Name: HexamazeModule
   m_TagString: Untagged
@@ -257,6 +258,7 @@ MonoBehaviour:
   Bomb: {fileID: 11489324}
   Module: {fileID: 11429752}
   Audio: {fileID: 11496072}
+  RuleSeedable: {fileID: 114392466800587312}
   Buttons:
   - {fileID: 114000012995446228}
   - {fileID: 114000010316141926}
@@ -1848,6 +1850,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShaderNames:
   - KT/Mobile/DiffuseTint
+--- !u!114 &114392466800587312
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 127088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adf69c2de51bd3c43bbd9bc22578ee08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _seed: 1
 --- !u!114 &114455551122943818
 MonoBehaviour:
   m_ObjectHideFlags: 1
