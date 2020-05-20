@@ -13,10 +13,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: Hexamaze
   title: Hexamaze
+  author: 
   description: 'Can you do the dance of the bees?
 
 
     Module created by Timwi. Sound by LeGeND.
+
+
+    Supports rule seeds!
 
 
     [url=http://ktane.timwi.de/PDF/Hexamaze.pdf]Manual PDF[/url]

@@ -64,6 +64,7 @@ public class HexamazeModule : MonoBehaviour
 
         // RULE SEED
         var rnd = RuleSeedable.GetRNG();
+        Debug.LogFormat(@"[Hexamaze #{0}] Using rule seed: {1}", _moduleId, rnd.Seed);
         if (!_seededRules.TryGetValue(rnd.Seed, out _maze))
         {
             _maze = HexamazeRuleGenerator.Generate(rnd);
