@@ -37,6 +37,7 @@ public class HexamazeModule : MonoBehaviour
     private int _pawnColor;
     private bool _isSolved;
     private bool _animating;
+    private bool _colorblind;
 
     private static readonly Dictionary<int, GeneratedMaze> _seededRules = new Dictionary<int, GeneratedMaze> { { 1, GeneratedMaze.Default } };
 
@@ -80,7 +81,8 @@ public class HexamazeModule : MonoBehaviour
         var pawnColorStr = "red|yellow|green|cyan|blue|pink".Split('|')[_pawnColor];
 
         ColorblindIndicator.text = pawnColorStr;
-        ColorblindIndicator.gameObject.SetActive(GetComponent<KMColorblindMode>().ColorblindModeActive);
+        _colorblind = GetComponent<KMColorblindMode>().ColorblindModeActive;
+        ColorblindIndicator.gameObject.SetActive(_colorblind);
 
         // Find a starting position for the pawn that is at least 4 steps and one bend away
         var dic = new Dictionary<Hex, QueueItem>();
@@ -329,7 +331,7 @@ public class HexamazeModule : MonoBehaviour
     }
 
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = "Specify movements as clockface (e.g. “!{0} 12 2 6 4 8”), cardinal (e.g. “!{0} n ne s se sw”) or directions (e.g. “!{0} up upright down downright downleft”). Use “!{0} colorblind” to show the color of the pawn.";
+    private readonly string TwitchHelpMessage = "!{0} 12 2 6 4 8 [movements as clockface] | !{0} n ne s se sw [movements as cardinal] | !{0} up upright down downright downleft [movements as directions] | !{0} colorblind";
 #pragma warning restore 414
 
     IEnumerator ProcessTwitchCommand(string command)
@@ -339,8 +341,9 @@ public class HexamazeModule : MonoBehaviour
         {
             if (_isSolved)
                 yield break;
+            _colorblind = !_colorblind;
+            ColorblindIndicator.gameObject.SetActive(_colorblind);
             yield return null;
-            ColorblindIndicator.gameObject.SetActive(true);
             yield break;
         }
 
