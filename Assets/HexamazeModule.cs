@@ -72,8 +72,6 @@ public class HexamazeModule : MonoBehaviour
             _seededRules[rnd.Seed] = _maze;
         }
 
-        _maze.__Debug_ASCIImaze(_moduleId);
-
         _submazeCenter = Hex.LargeHexagon(9).PickRandom();
         _submazeRotation = Rnd.Range(0, 6);
         _pawnColor = Rnd.Range(0, 6);
