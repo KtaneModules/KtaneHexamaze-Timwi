@@ -1,0 +1,10 @@
+{
+  "name": "Hexamaze-Editor",
+  "references": [
+    "Hexamaze"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}
