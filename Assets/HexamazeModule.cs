@@ -91,9 +91,9 @@ public class HexamazeModule : MonoBehaviour
         foreach (var goal in Enumerable.Range(0, 4).Select(x => new Hex(x - 3, -x).Rotate(_pawnColor) + _submazeCenter))
         {
             var directions = new List<int>();
-            if (hasWall(goal, _pawnColor) == false)
+            if (hasWall(goal, _pawnColor) == HasWall.None)
                 directions.Add(_pawnColor);
-            if (hasWall(goal, (_pawnColor + 1) % 6) == false)
+            if (hasWall(goal, (_pawnColor + 1) % 6) == HasWall.None)
                 directions.Add((_pawnColor + 1) % 6);
             if (directions.Count > 0)
             {
@@ -111,7 +111,7 @@ public class HexamazeModule : MonoBehaviour
             dic[item.Hex] = item;
             var neigh = item.Hex.Neighbors;
             for (int i = 0; i < 6; i++)
-                if (hasWall(item.Hex, i) == false && (neigh[i] - _submazeCenter).Distance < 4)
+                if (hasWall(item.Hex, i) == HasWall.None && (neigh[i] - _submazeCenter).Distance < 4)
                     queue.Enqueue(new QueueItem
                     {
                         Hex = neigh[i],
@@ -129,7 +129,7 @@ public class HexamazeModule : MonoBehaviour
                 for (int dist = 0; dist < 7; dist++)
                 {
                     var hex = inf.Hex + new Hex(-dist, 0).Rotate(dir);
-                    if (hasWall(hex, dir) != false)
+                    if (hasWall(hex, dir) != HasWall.None)
                         break;
                     if (dirDic.TryGetValue(hex, out list) && list.Contains(dir))
                         return false;
@@ -243,9 +243,9 @@ public class HexamazeModule : MonoBehaviour
 
         // false = no wall, true = invisible wall, null = visible wall.
         var wallInfo = hasWall(globalPos, globalDirection);
-        if (wallInfo != false)
+        if (wallInfo != HasWall.None)
         {
-            Debug.LogFormat("[Hexamaze #{0}] There’s {1} wall there.", _moduleId, wallInfo == null ? "a visible" : "an invisible");
+            Debug.LogFormat("[Hexamaze #{0}] There’s {1} wall there.", _moduleId, wallInfo == HasWall.Visible ? "a visible" : "an invisible");
             _movements.Enqueue(new Movement
             {
                 Complete = false,
@@ -253,7 +253,7 @@ public class HexamazeModule : MonoBehaviour
                 Action = () =>
                 {
                     Module.HandleStrike();
-                    if (hasWall(globalPos, globalDirection) != null && newPawnPos.Distance < 4)
+                    if (hasWall(globalPos, globalDirection) != HasWall.Visible && newPawnPos.Distance < 4)
                     {
                         CreateGraphic(string.Format("Wall {0}/{1}", globalPos, globalDirection), _pawnPos.GetCenter(1, 1e-4f), LineTexture, scale: .15f, rotation: direction - 1);
                         setWallVisible(globalPos, globalDirection);
@@ -313,18 +313,25 @@ public class HexamazeModule : MonoBehaviour
     }
 
     private readonly Dictionary<Hex, HashSet<int>> _revealedWalls = new Dictionary<Hex, HashSet<int>>();
-    private bool? hasWall(Hex hex, int n)
+    private enum HasWall { None, Invisible, Visible }
+    private HasWall hasWall(Hex hex, int n)
     {
-        if (hex.Distance >= HexamazeRuleGenerator.Size || hex.GetNeighbor(n).Distance >= HexamazeRuleGenerator.Size)
-            return false;
         HashSet<int> hs;
         if (_revealedWalls.TryGetValue(hex, out hs) && hs.Contains(n))
-            return null;
-        return _maze.HasWall(hex, n);
+            return HasWall.Visible;
+        return _maze.HasWall(hex, n) ? HasWall.Invisible : HasWall.None;
     }
+
     private void setWallVisible(Hex hex, int n)
     {
         HashSet<int> hs;
+        if (!_revealedWalls.TryGetValue(hex, out hs))
+            _revealedWalls[hex] = hs = new HashSet<int>();
+        hs.Add(n);
+        hex = hex.GetNeighbor(n);
+        if (hex.Distance >= HexamazeRuleGenerator.Size)
+            return;
+        n = (n + 3) % 6;
         if (!_revealedWalls.TryGetValue(hex, out hs))
             _revealedWalls[hex] = hs = new HashSet<int>();
         hs.Add(n);
@@ -413,7 +420,7 @@ public class HexamazeModule : MonoBehaviour
             }
 
             var neighbors = h.Neighbors;
-            foreach (var neighborIx in Enumerable.Range(0, 6).Where(dir => hasWall(h, dir) == false && ((h - _submazeCenter).Distance < 4 || exitHexes.Contains(h))))
+            foreach (var neighborIx in Enumerable.Range(0, 6).Where(dir => hasWall(h, dir) == HasWall.None && ((h - _submazeCenter).Distance < 4 || exitHexes.Contains(h))))
             {
                 if (already.Contains(neighbors[neighborIx]))
                     continue;
