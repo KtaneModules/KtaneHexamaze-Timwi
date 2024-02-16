@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Hexamaze
 {
@@ -48,17 +46,18 @@ namespace Hexamaze
             }
 
             // Step 1.2: Go through all submazes and make sure they’re all connected and all have at least one exit on each side
-            // This is parallelizable and uses multiple threads
             var allSubmazes = Hex.LargeHexagon(Size - SubmazeSize + 1).Select(h => (Hex?) h).ToArray();
             Hex? lastHex1 = null, lastHex2 = null;
             while (true)
             {
                 var candidateCounts = new Dictionary<int, int>();
 
+                var allNull = true;
                 for (var smIx = 0; smIx < allSubmazes.Length; smIx++)
                 {
                     if (allSubmazes[smIx] == null)
                         continue;
+                    allNull = false;
 
                     var centerHex = allSubmazes[smIx].Value;
 
@@ -89,8 +88,14 @@ namespace Hexamaze
                     }
                 }
 
-                if (candidateCounts.Count == 0)
+                if (allNull)
                     break;
+
+                if (candidateCounts.Count == 0)
+                {
+                    lastHex1 = lastHex2 = null;
+                    continue;
+                }
 
                 // Remove one wall out of the “most wanted”
                 var topScore = 0;
