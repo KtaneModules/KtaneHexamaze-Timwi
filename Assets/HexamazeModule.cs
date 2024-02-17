@@ -129,7 +129,7 @@ public class HexamazeModule : MonoBehaviour
                 for (int dist = 0; dist < 7; dist++)
                 {
                     var hex = inf.Hex + new Hex(-dist, 0).Rotate(dir);
-                    if (hasWall(hex, dir) != HasWall.None)
+                    if ((hex - _submazeCenter).Distance < 4 && hasWall(hex, dir) != HasWall.None)
                         break;
                     if (dirDic.TryGetValue(hex, out list) && list.Contains(dir))
                         return false;

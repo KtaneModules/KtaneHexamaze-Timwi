@@ -20,10 +20,7 @@ namespace Hexamaze
 
         public bool HasWall(Hex hex, int dir)
         {
-            var ix = wallIndex(hex, dir);
-            if (ix < 0 || ix >= _walls.Length)
-                Debug.LogFormat("<> {0}, {1}", ix, _walls.Length);
-            return _walls[ix];
+            return _walls[wallIndex(hex, dir)];
         }
 
         private static int markingIndex(Hex h)
